@@ -12,20 +12,19 @@ import matplotlib as mpl
 
 import pandas as p
 import sklearn.mixture as mixture
+from sklearn import preprocessing
 import numpy as np
 
-def main(coverage_file,output_base,header=None):
-    df = p.read_csv(coverage_file,header=header)
-    X = df.ix[:,1:].values
 
+def main(coverage_file,output_base,n_components_range,cv_types,header=None):
+    df = p.read_csv(coverage_file,header=header,index_col=0)
+    X = df.values
+    X = preprocessing.scale(X)
 
     lowest_bic = np.infty
     bic = []
     convergence = []
     settings = []
-    n_components_range = [1,2,3,5,7]
-    possible_cv_types = ['spherical', 'tied', 'diag', 'full']
-    cv_types = ['spherical','tied','diag','full']
     for cv_type in cv_types:
         for n_components in n_components_range:
             # Fit a mixture of gaussians with EM
@@ -34,7 +33,7 @@ def main(coverage_file,output_base,header=None):
             labels = gmm.predict(X)
             bic.append(gmm.bic(X))
             convergence.append(gmm.converged_)
-            class_series = p.Series(labels,index=df[0].values)
+            class_series = p.Series(labels,index=df.index)
             setting = str(n_components)+"_" + str(cv_type)
             settings.append(setting)
             class_series.to_csv(output_base+"_" +setting+str(gmm.bic(X))+ '.csv')
@@ -74,14 +73,40 @@ if __name__=="__main__":
                         help='specify the coverage file')
     parser.add_argument('-o','--output',
                         help='specify the output base file_name, the number of components and cv_type will be added to this file name.')
+    parser.add_argument('--n_start', type=int,
+                        help='The number of clusters to start at.')
+    parser.add_argument('--n_stop', type=int,
+                        help='The number of clusters to stop at.')
+    parser.add_argument('--n_step', type=int,
+                        help='The step size for the number of clusters.')
+    parser.add_argument('--full', action='store_true',
+                        help='Add this tag to include full covariance matrix')
+    parser.add_argument('--diag', action='store_true',
+                        help='Add this tag to include diagonal covariance matrix')
+    parser.add_argument('--spherical', action='store_true',
+                        help='Add this tag to include spherical covariance matrix')
+    parser.add_argument('--tied', action='store_true',
+                        help='Add this tag to include a tied covariance matrix')
+
+
     parser.add_argument('--header', action='store_true',
                         help='Use this tag if header is included in coverage file')
     args = parser.parse_args()
+
+    cv_types = ['full','diag','spherical','tied']
+
+    n_components_range = range(args.n_start,args.n_stop+1,args.n_step)
+    used_cv_types=[]
+    for cv_type in cv_types:
+        if eval('args.'+cv_type):
+            used_cv_types.append(cv_type)
+    
     if not args.output:
        sys.exit(-1) 
     if args.header:
         header=0
     else:
         header=None
-    main(args.coverage,args.output,header)
+
+    main(args.coverage,args.output,n_components_range,used_cv_types,header)
 
