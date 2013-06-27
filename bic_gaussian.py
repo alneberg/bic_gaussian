@@ -23,9 +23,9 @@ def main(coverage_file,output_base,header=None):
     bic = []
     convergence = []
     settings = []
-    n_components_range = [10,30,50,70]
+    n_components_range = [1,2,3,5,7]
     possible_cv_types = ['spherical', 'tied', 'diag', 'full']
-    cv_types = ['diag','full']
+    cv_types = ['spherical','tied','diag','full']
     for cv_type in cv_types:
         for n_components in n_components_range:
             # Fit a mixture of gaussians with EM
@@ -44,7 +44,7 @@ def main(coverage_file,output_base,header=None):
     
     bic_series = p.Series(bic,index=settings)
     convergence_series = p.Series(convergence,index=settings)
-    bic_df = p.DataFrame({bic: bic_series, converged: convergence_series})
+    bic_df = p.DataFrame({'bic': bic_series, 'converged': convergence_series})
     bic_df.to_csv(output_base+"_BIC_results.csv")
     bic = np.array(bic)
     color_iter = itertools.cycle(['k', 'r', 'g', 'b', 'c', 'm', 'y'])
