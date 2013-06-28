@@ -27,6 +27,7 @@ def main(coverage_file,output_base,n_components_range,cv_types,header=None):
     settings = []
     for cv_type in cv_types:
         for n_components in n_components_range:
+            sys.stderr.write('Covariance matrix: '+cv_type+', Number of components: '+str(n_components)+'\n')
             # Fit a mixture of gaussians with EM
             gmm = mixture.GMM(n_components=n_components, covariance_type=cv_type)
             gmm.fit(X)
